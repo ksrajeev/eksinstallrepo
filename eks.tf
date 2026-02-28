@@ -39,6 +39,14 @@ module "eks" {
       type                       = "ingress"
       source_node_security_group = true
     }
+    ingress_all_cidr = {
+      description = "Allow all ingress traffic"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
     egress_nodes_443 = {
       description                = "Cluster API to node groups"
       protocol                   = "tcp"
