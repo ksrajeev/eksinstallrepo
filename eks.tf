@@ -102,36 +102,10 @@ module "eks" {
       # AMI Configuration
       ami_type = "AL2023_x86_64_STANDARD"
 
-      # Pre-bootstrap user data for AL2023
-      pre_bootstrap_user_data = <<-EOD
-        #!/bin/bash
-        
-        # Configure system for EKS
-        echo "Starting pre-bootstrap configuration for EKS..."
-        
-        # Update system packages
-        dnf update -y
-        
-        # Install additional packages if needed
-        dnf install -y jq curl wget
-        
-        # Configure containerd for optimal EKS performance
-        mkdir -p /etc/containerd
-        
-        # Set up proper DNS configuration
-        echo "nameserver 169.254.169.253" >> /etc/resolv.conf
-        
-        # Configure kubelet extra arguments
-        echo "KUBELET_EXTRA_ARGS=--max-pods=110 --use-max-pods=false" >> /etc/kubernetes/kubelet/kubelet-config.json.env
-        
-        # Ensure proper permissions
-        chmod 644 /etc/kubernetes/kubelet/kubelet-config.json.env || true
-        
-        echo "Pre-bootstrap configuration completed"
-      EOD
-
-      # Bootstrap arguments for EKS cluster joining
-      bootstrap_extra_args = "--container-runtime containerd --kubelet-extra-args '--max-pods=110 --kube-reserved cpu=250m,memory=1Gi,ephemeral-storage=1Gi --system-reserved cpu=250m,memory=0.2Gi,ephemeral-storage=1Gi'"
+      # Use custom launch template
+      use_custom_launch_template = true
+      launch_template_name = aws_launch_template.eks_node_group.name
+      launch_template_version = aws_launch_template.eks_node_group.latest_version
 
       # Node Group Configuration
       capacity_type        = "ON_DEMAND"
@@ -344,4 +318,94 @@ resource "aws_iam_policy" "ebs_csi_policy" {
 resource "aws_iam_role_policy_attachment" "ebs_csi_policy_attachment" {
   policy_arn = aws_iam_policy.ebs_csi_policy.arn
   role       = aws_iam_role.eks_node_group_role.name
+}
+
+# Launch Template for EKS Node Group
+resource "aws_launch_template" "eks_node_group" {
+  name_prefix   = "${var.eks_cluster_name}-node-template-"
+  description   = "Launch template for EKS node group with custom userdata"
+  image_id      = data.aws_ami.eks_default.id
+  instance_type = var.eks_node_instance_type
+
+  vpc_security_group_ids = [module.eks.node_security_group_id]
+
+  user_data = base64encode(templatefile("${path.module}/userdata.sh", {
+    cluster_name = var.eks_cluster_name
+    node_group_name = "${var.eks_cluster_name}-nodes"
+    kubernetes_version = var.eks_cluster_version
+    cluster_service_cidr = "172.20.0.0/16"
+  }))
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = var.eks_node_disk_size
+      volume_type           = "gp3"
+      delete_on_termination = true
+      encrypted             = true
+    }
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.eks_node_group.name
+  }
+
+  monitoring {
+    enabled = true
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(var.common_tags, {
+      Name = "${var.eks_cluster_name}-node"
+      "kubernetes.io/cluster/${var.eks_cluster_name}" = "owned"
+    })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags = merge(var.common_tags, {
+      Name = "${var.eks_cluster_name}-node-volume"
+    })
+  }
+
+  tags = merge(var.common_tags, {
+    Name = "${var.eks_cluster_name}-node-launch-template"
+    Purpose = "EKS Node Group Launch Template"
+    Component = "Launch Template"
+    ClusterName = var.eks_cluster_name
+  })
+}
+
+# Data source to get the latest EKS optimized AMI
+data "aws_ami" "eks_default" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-${var.eks_cluster_version}-v*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# IAM Instance Profile for Node Group
+resource "aws_iam_instance_profile" "eks_node_group" {
+  name = "${var.eks_cluster_name}-node-instance-profile"
+  role = aws_iam_role.eks_node_group_role.name
+
+  tags = merge(var.common_tags, {
+    Name = "${var.eks_cluster_name}-node-instance-profile"
+    Purpose = "EKS Node Group Instance Profile"
+    Component = "IAM"
+  })
 }
