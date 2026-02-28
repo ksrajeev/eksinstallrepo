@@ -39,7 +39,7 @@ common_tags = {
 
 # EKS Cluster Configuration
 eks_cluster_name    = "prod-eks"
-eks_cluster_version = "1.28"
+eks_cluster_version = "1.33"
 
 # EKS Access Control
 eks_public_access_cidrs = ["203.0.113.0/24"]  # Replace with your IP range
