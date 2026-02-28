@@ -1,0 +1,57 @@
+name: Terraform on AWS (master push)
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  terraform:
+    name: Terraform CI
+    runs-on: ubuntu-latest
+
+    # If you later switch to OIDC + role assumption, add:
+    # permissions:
+    #   id-token: write
+    #   contents: read
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ✅ Configure AWS creds from GitHub Secrets (IAM user keys)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # (Optional) Verify the identity to ensure credentials are set
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      # ✅ Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          # set a pinned version if you want; otherwise latest stable
+          terraform_version: 1.7.5
+
+      # Set this to the directory where your Terraform code lives, if not repo root
+      - name: Terraform Init
+        working-directory: .
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: .
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        working-directory: .
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      # NOTE: Auto-apply is generally gated to manual approvals.
+      # If you want a manual Apply on master only, add a separate job with workflow_dispatch.
