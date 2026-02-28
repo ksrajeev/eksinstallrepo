@@ -1,0 +1,38 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and customize the values as needed
+
+# AWS Configuration
+aws_region = "us-west-2"
+
+# VPC Configuration
+vpc_name = "my-production-vpc"
+vpc_cidr = "10.0.0.0/16"
+az_count = 3
+
+# Subnet Configuration
+private_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+public_subnet_cidrs   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+database_subnet_cidrs = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+
+# NAT Gateway Configuration
+enable_nat_gateway     = true
+single_nat_gateway     = false
+one_nat_gateway_per_az = true
+
+# Security Configuration
+allowed_ssh_cidrs = ["203.0.113.0/24"]  # Replace with your IP range
+
+# VPC Features
+enable_vpc_flow_logs         = false
+create_database_subnet_group = true
+create_s3_endpoint          = false
+create_ec2_endpoint         = false
+
+# Tags
+common_tags = {
+  Environment = "production"
+  Project     = "my-project"
+  ManagedBy   = "terraform"
+  Owner       = "platform-team"
+  CostCenter  = "engineering"
+}
