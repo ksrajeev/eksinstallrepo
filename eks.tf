@@ -100,7 +100,7 @@ module "eks" {
       disk_type = "gp3"
 
       # AMI Configuration
-      ami_type = "AL2_x86_64"
+      ami_type = "AL2023_x86_64"
 
       # Node Group Configuration
       capacity_type        = "ON_DEMAND"
