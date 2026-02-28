@@ -117,7 +117,7 @@ variable "common_tags" {
 variable "eks_cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
-  default     = "my-eks"
+  default     = "my-eks-1.33"
 }
 
 variable "eks_cluster_version" {
