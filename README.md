@@ -55,6 +55,31 @@ This configuration creates the following AWS resources:
 2. **AWS CLI** configured with appropriate credentials
 3. **AWS Account** with necessary permissions
 
+## State Management
+
+⚠️ **IMPORTANT**: This configuration stores Terraform state files in the Git repository (local state).
+
+### State File Configuration
+- State files (`terraform.tfstate`) are **tracked in Git**
+- Plan files (`*.tfplan`) are **tracked in Git**  
+- `.terraform` directory is **ignored** (contains modules/providers)
+
+### Implications
+- **Pros**: Simple setup, version controlled state, easy rollback
+- **Cons**: State contains sensitive data, concurrent access issues, larger repo size
+
+### Security Considerations
+- State files may contain sensitive information (passwords, keys)
+- Ensure your Git repository access is properly secured
+- Consider using Git secrets scanning tools
+- For production, consider migrating to remote state (S3+ DynamoDB)
+
+### Team Collaboration
+- **Always pull** before running terraform commands
+- **Always commit and push** state changes immediately
+- Coordinate with team to avoid concurrent modifications
+- Use `terraform workspace` for different environments
+
 ## Usage
 
 ### 1. Clone and Setup
@@ -91,19 +116,48 @@ terraform init
 ### 4. Plan and Apply
 
 ```bash
+# ALWAYS pull latest changes first (important for state file sync)
+git pull origin main
+
 # Review the planned changes
 terraform plan
 
 # Apply the configuration
 terraform apply
+
+# Commit and push state changes immediately after apply
+git add .
+git commit -m "Applied terraform changes - updated state"
+git push origin main
 ```
 
-### 5. Clean Up
+### 5. Recommended Git Workflow for State Management
+
+```bash
+# Before any terraform operations
+git pull origin main
+
+# After any terraform changes (apply/destroy)
+git add terraform.tfstate terraform.tfstate.backup
+git commit -m "Updated terraform state after [operation]"
+git push origin main
+```
+
+### 6. Clean Up
 
 To destroy all resources when no longer needed:
 
 ```bash
+# Pull latest state
+git pull origin main
+
+# Destroy infrastructure
 terraform destroy
+
+# Commit state changes
+git add .
+git commit -m "Destroyed terraform infrastructure - updated state"
+git push origin main
 ```
 
 ## Configuration Options

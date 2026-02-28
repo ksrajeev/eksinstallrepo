@@ -1,9 +1,14 @@
+# Terraform .gitignore with STATE FILES TRACKED IN GIT
+# WARNING: This configuration stores terraform state files in git repository
+# This is configured per user request but consider security implications
+# State files may contain sensitive information
+
 # Local .terraform directories
 **/.terraform/*
 
-# .tfstate files
-*.tfstate
-*.tfstate.*
+# .tfstate files - COMMENTED OUT to track state in git repo
+# *.tfstate
+# *.tfstate.*
 
 # Crash log files
 crash.log
@@ -22,8 +27,8 @@ override.tf.json
 # Include override files you do wish to add to version control using negated pattern
 # !example_override.tf
 
-# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
-*.tfplan
+# Include tfplan files - COMMENTED OUT to track plan files in git repo  
+# *.tfplan
 
 # Ignore CLI configuration files
 .terraformrc
