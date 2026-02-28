@@ -38,7 +38,7 @@ common_tags = {
 }
 
 # EKS Cluster Configuration
-eks_cluster_name    = "my-production-eks-cluster"
+eks_cluster_name    = "prod-eks"
 eks_cluster_version = "1.28"
 
 # EKS Access Control

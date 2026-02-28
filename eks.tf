@@ -73,7 +73,7 @@ module "eks" {
   # EKS Managed Node Groups
   eks_managed_node_groups = {
     minimal_node_group = {
-      name = "${var.eks_cluster_name}-minimal-nodes"
+      name = "${var.eks_cluster_name}-nodes"
 
       # Instance Configuration
       instance_types = [var.eks_node_instance_type]
@@ -114,7 +114,7 @@ module "eks" {
 
       # Tags
       tags = merge(var.common_tags, {
-        Name = "${var.eks_cluster_name}-minimal-node-group"
+        Name = "${var.eks_cluster_name}-node-group"
         Purpose = "EKS Managed Node Group"
         NodeGroupType = "Minimal"
         InstanceType = var.eks_node_instance_type
@@ -196,7 +196,7 @@ module "eks" {
 
 # Additional Security Group for EKS Administrative Access
 resource "aws_security_group" "eks_admin_access" {
-  name        = "${var.eks_cluster_name}-admin-access-security-group"
+  name        = "${var.eks_cluster_name}-admin-sg"
   description = "Security group for EKS administrative access"
   vpc_id      = module.vpc.vpc_id
 
@@ -217,7 +217,7 @@ resource "aws_security_group" "eks_admin_access" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.eks_cluster_name}-admin-access-security-group"
+    Name = "${var.eks_cluster_name}-admin-sg"
     Purpose = "EKS Administrative Access"
     Component = "Access Control"
     SecurityLevel = "Critical"
@@ -228,7 +228,7 @@ resource "aws_security_group" "eks_admin_access" {
 
 # IAM Role for EKS Node Groups (if additional customization needed)
 resource "aws_iam_role" "eks_node_group_role" {
-  name = "${var.eks_cluster_name}-node-group-role"
+  name = "${var.eks_cluster_name}-node-role"
 
   assume_role_policy = jsonencode({
     Statement = [{
@@ -242,7 +242,7 @@ resource "aws_iam_role" "eks_node_group_role" {
   })
 
   tags = merge(var.common_tags, {
-    Name = "${var.eks_cluster_name}-node-group-role"
+    Name = "${var.eks_cluster_name}-node-role"
     Purpose = "EKS Node Group IAM Role"
     Component = "IAM"
     ServiceType = "EC2"
@@ -268,7 +268,7 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
 
 # EBS CSI Driver IAM Policy for Node Groups
 resource "aws_iam_policy" "ebs_csi_policy" {
-  name        = "${var.eks_cluster_name}-ebs-csi-policy"
+  name        = "${var.eks_cluster_name}-ebs-csi"
   description = "IAM policy for EBS CSI driver"
 
   policy = jsonencode({
@@ -299,7 +299,7 @@ resource "aws_iam_policy" "ebs_csi_policy" {
   })
 
   tags = merge(var.common_tags, {
-    Name = "${var.eks_cluster_name}-ebs-csi-policy"
+    Name = "${var.eks_cluster_name}-ebs-csi"
     Purpose = "EBS CSI Driver Policy"
     Component = "Storage"
     ServiceType = "EBS"
