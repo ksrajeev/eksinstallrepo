@@ -118,7 +118,7 @@ jobs:
         working-directory: .
         run: |
           echo "Applying Terraform plan from artifact..."
-          terraform apply -input=false -no-color tfplan
+          terraform apply -auto-approve -input=false -no-color tfplan
           echo "apply_url=https://console.aws.amazon.com/" >> $GITHUB_OUTPUT
 
   terraform-destroy:
@@ -160,7 +160,7 @@ jobs:
         working-directory: .
         run: |
           echo "Destroying Terraform resources..."
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve -no-color
           echo "destroy_url=https://console.aws.amazon.com/" >> $GITHUB_OUTPUT
 
       # NOTE: Auto-apply is generally gated to manual approvals.
