@@ -82,7 +82,7 @@ module "eks" {
   eks_managed_node_groups = {
     # Node group for Kubernetes 1.33 - Uses custom launch template with userdata.sh
     eks_1_33_node_group = {
-      name = "${var.eks_cluster_name}-k8s-1-33-nodes"
+      name = "${var.eks_cluster_name}-k8s133"
 
       # Scaling Configuration
       min_size     = var.eks_node_min_size
@@ -134,7 +134,7 @@ module "eks" {
     
     # Minimal node group - Uses custom launch template with userdata.sh
     minimal_node_group = {
-      name = "${var.eks_cluster_name}-nodes"
+      name = "${var.eks_cluster_name}-basic"
 
       # Scaling Configuration
       min_size     = var.eks_node_min_size
@@ -373,7 +373,7 @@ resource "aws_launch_template" "eks_node_group_1_33" {
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
     cluster_name = var.eks_cluster_name
-    node_group_name = "${var.eks_cluster_name}-k8s-1-33-nodes"
+    node_group_name = "${var.eks_cluster_name}-k8s133"
     kubernetes_version = "1.33"
     cluster_service_cidr = "172.20.0.0/16"
   }))
@@ -423,14 +423,14 @@ resource "aws_launch_template" "eks_node_group_1_33" {
   })
 }
 
-# Data source to get the latest EKS optimized AMI specifically for Kubernetes 1.33
+# Data source to get the latest EKS optimized AMI with fallback versions
 data "aws_ami" "eks_default_1_33" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amazon-eks-node-1.33-v*"]
+    values = ["amazon-eks-node-1.33-v*", "amazon-eks-node-1.32-v*", "amazon-eks-node-1.31-v*", "amazon-eks-node-1.30-v*", "amazon-eks-node-1.29-v*"]
   }
 
   filter {
@@ -460,7 +460,7 @@ resource "aws_launch_template" "eks_node_group" {
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
     cluster_name = var.eks_cluster_name
-    node_group_name = "${var.eks_cluster_name}-nodes"
+    node_group_name = "${var.eks_cluster_name}-basic"
     kubernetes_version = var.eks_cluster_version
     cluster_service_cidr = "172.20.0.0/16"
   }))
