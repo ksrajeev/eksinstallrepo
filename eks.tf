@@ -94,10 +94,6 @@ module "eks" {
       # AMI Configuration
       ami_type = "AL2_x86_64"
 
-      # Launch Template Configuration
-      create_launch_template = false
-      launch_template_name   = ""
-
       # Node Group Configuration
       capacity_type        = "ON_DEMAND"
       force_update_version = false
