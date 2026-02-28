@@ -17,11 +17,13 @@ This configuration creates the following AWS resources:
 
 ### EKS Cluster
 - **EKS Cluster** with public endpoint access
+- **Custom Launch Template** with optimized userdata for node bootstrapping
 - **Managed Node Group** with single node (minimal configuration)
 - **EKS Add-ons** (CoreDNS, kube-proxy, VPC-CNI, EBS CSI driver)
 - **IRSA (IAM Roles for Service Accounts)** enabled
 - **CloudWatch Logging** for cluster monitoring
 - **Security Groups** for cluster and node access control
+- **Instance Profile** and IAM roles for proper node permissions
 
 ### Security Groups
 - **Default Security Group** - Basic VPC-wide rules
@@ -40,7 +42,9 @@ This configuration creates the following AWS resources:
 ```
 .
 ├── main.tf                    # Main Terraform configuration (VPC)
-├── eks.tf                     # EKS cluster configuration
+├── vpc.tf                     # VPC infrastructure (moved from main.tf)
+├── eks.tf                     # EKS cluster configuration with launch template
+├── userdata.sh                # Node bootstrap script for EKS nodes
 ├── variables.tf              # Variable definitions
 ├── outputs.tf               # Output definitions
 ├── terraform.tfvars.example # Example variables file

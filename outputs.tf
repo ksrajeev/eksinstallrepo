@@ -230,3 +230,19 @@ output "kubectl_config_command" {
   description = "Command to configure kubectl"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
+
+# Launch Template Outputs
+output "eks_launch_template_id" {
+  description = "ID of the EKS node group launch template"
+  value       = aws_launch_template.eks_node_group.id
+}
+
+output "eks_launch_template_version" {
+  description = "Latest version of the EKS node group launch template"
+  value       = aws_launch_template.eks_node_group.latest_version
+}
+
+output "eks_node_instance_profile_name" {
+  description = "Name of the EKS node group instance profile"
+  value       = aws_iam_instance_profile.eks_node_group.name
+}
