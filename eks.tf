@@ -80,12 +80,9 @@ module "eks" {
 
   # EKS Managed Node Groups
   eks_managed_node_groups = {
-    minimal_node_group = {
-      name = "${var.eks_cluster_name}-nodes"
-
-      # Instance Configuration
-      instance_types = [var.eks_node_instance_type]
-      capacity_type  = "ON_DEMAND"
+    # Node group for Kubernetes 1.33 - Uses custom launch template with userdata.sh
+    eks_1_33_node_group = {
+      name = "${var.eks_cluster_name}-k8s-1-33-nodes"
 
       # Scaling Configuration
       min_size     = var.eks_node_min_size
@@ -95,14 +92,59 @@ module "eks" {
       # Subnet Configuration
       subnet_ids = module.vpc.private_subnets
 
-      # Disk Configuration
-      disk_size = var.eks_node_disk_size
-      disk_type = "gp3"
+      # Use custom launch template (all instance config comes from launch template)
+      use_custom_launch_template = true
+      launch_template_name = aws_launch_template.eks_node_group_1_33.name
+      launch_template_version = aws_launch_template.eks_node_group_1_33.latest_version
 
-      # AMI Configuration
-      ami_type = "AL2023_x86_64_STANDARD"
+      # Node Group Configuration
+      capacity_type        = "ON_DEMAND"
+      force_update_version = false
 
-      # Use custom launch template
+      # Taints for 1.33 specific workloads
+      taints = [
+        {
+          key    = "kubernetes.io/version"
+          value  = "1.33"
+          effect = "NO_SCHEDULE"
+        }
+      ]
+
+      # Labels
+      labels = {
+        Environment = var.common_tags.Environment
+        NodeGroup   = "k8s-1-33"
+        Purpose     = "kubernetes-1-33-workload"
+        KubernetesVersion = "1.33"
+      }
+
+      # Tags
+      tags = merge(var.common_tags, {
+        Name = "${var.eks_cluster_name}-k8s-1-33-node-group"
+        Purpose = "EKS Node Group for Kubernetes 1.33"
+        NodeGroupType = "Version-Specific"
+        InstanceType = var.eks_node_instance_type
+        ScalingPolicy = "Manual"
+        Component = "Compute"
+        Tier = "Worker Nodes"
+        KubernetesVersion = "1.33"
+        TargetVersion = "1.33"
+      })
+    }
+    
+    # Minimal node group - Uses custom launch template with userdata.sh
+    minimal_node_group = {
+      name = "${var.eks_cluster_name}-nodes"
+
+      # Scaling Configuration
+      min_size     = var.eks_node_min_size
+      max_size     = var.eks_node_max_size
+      desired_size = var.eks_node_desired_size
+
+      # Subnet Configuration
+      subnet_ids = module.vpc.private_subnets
+
+      # Use custom launch template (all instance config comes from launch template)
       use_custom_launch_template = true
       launch_template_name = aws_launch_template.eks_node_group.name
       launch_template_version = aws_launch_template.eks_node_group.latest_version
@@ -320,6 +362,93 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_policy_attachment" {
   role       = aws_iam_role.eks_node_group_role.name
 }
 
+# Launch Template for EKS Node Group (Kubernetes 1.33)
+resource "aws_launch_template" "eks_node_group_1_33" {
+  name_prefix   = "${var.eks_cluster_name}-k8s-1-33-node-template-"
+  description   = "Launch template for EKS node group with Kubernetes 1.33"
+  image_id      = data.aws_ami.eks_default_1_33.id
+  instance_type = var.eks_node_instance_type
+
+  vpc_security_group_ids = [module.eks.node_security_group_id]
+
+  user_data = base64encode(templatefile("${path.module}/userdata.sh", {
+    cluster_name = var.eks_cluster_name
+    node_group_name = "${var.eks_cluster_name}-k8s-1-33-nodes"
+    kubernetes_version = "1.33"
+    cluster_service_cidr = "172.20.0.0/16"
+  }))
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = var.eks_node_disk_size
+      volume_type           = "gp3"
+      delete_on_termination = true
+      encrypted             = true
+    }
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.eks_node_group.name
+  }
+
+  monitoring {
+    enabled = true
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = merge(var.common_tags, {
+      Name = "${var.eks_cluster_name}-k8s-1-33-node"
+      "kubernetes.io/cluster/${var.eks_cluster_name}" = "owned"
+      KubernetesVersion = "1.33"
+    })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags = merge(var.common_tags, {
+      Name = "${var.eks_cluster_name}-k8s-1-33-node-volume"
+      KubernetesVersion = "1.33"
+    })
+  }
+
+  tags = merge(var.common_tags, {
+    Name = "${var.eks_cluster_name}-k8s-1-33-launch-template"
+    Purpose = "EKS Node Group Launch Template for Kubernetes 1.33"
+    Component = "Launch Template"
+    ClusterName = var.eks_cluster_name
+    KubernetesVersion = "1.33"
+    TargetVersion = "1.33"
+  })
+}
+
+# Data source to get the latest EKS optimized AMI specifically for Kubernetes 1.33
+data "aws_ami" "eks_default_1_33" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-1.33-v*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
 # Launch Template for EKS Node Group
 resource "aws_launch_template" "eks_node_group" {
   name_prefix   = "${var.eks_cluster_name}-node-template-"
@@ -384,7 +513,7 @@ data "aws_ami" "eks_default" {
 
   filter {
     name   = "name"
-    values = ["amazon-eks-node-${var.eks_cluster_version}-v*"]
+    values = ["amazon-eks-node-1.33-v*", "amazon-eks-node-1.32-v*", "amazon-eks-node-1.31-v*", "amazon-eks-node-1.30-v*"]
   }
 
   filter {
@@ -395,6 +524,11 @@ data "aws_ami" "eks_default" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
 
