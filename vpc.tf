@@ -101,8 +101,8 @@ module "vpc" {
 # Security Groups
 # Default security group for the VPC
 resource "aws_security_group" "default" {
-  name        = "${var.vpc_name}-default-sg"
-  description = "Default security group for ${var.vpc_name} VPC"
+  name        = "${var.vpc_name}-default-security-group"
+  description = "Default security group for ${var.vpc_name} VPC with basic access rules"
   vpc_id      = module.vpc.vpc_id
 
   # Ingress rules
@@ -148,14 +148,19 @@ resource "aws_security_group" "default" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-default-sg"
+    Name = "${var.vpc_name}-default-security-group"
+    Purpose = "Default VPC Security Group"
+    Tier = "Infrastructure"
+    SecurityLevel = "Medium"
+    CreatedBy = "Terraform"
+    Component = "Networking"
   })
 }
 
 # Web tier security group
 resource "aws_security_group" "web" {
-  name        = "${var.vpc_name}-web-sg"
-  description = "Security group for web tier"
+  name        = "${var.vpc_name}-web-tier-security-group"
+  description = "Security group for web tier with HTTP/HTTPS access"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -191,14 +196,20 @@ resource "aws_security_group" "web" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-web-sg"
+    Name = "${var.vpc_name}-web-tier-security-group"
+    Purpose = "Web Tier Security"
+    Tier = "Web"
+    SecurityLevel = "High"
+    AllowsInternet = "true"
+    Component = "Frontend"
+    Layer = "Presentation"
   })
 }
 
 # Application tier security group
 resource "aws_security_group" "app" {
-  name        = "${var.vpc_name}-app-sg"
-  description = "Security group for application tier"
+  name        = "${var.vpc_name}-application-tier-security-group"
+  description = "Security group for application tier with restricted access"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -226,14 +237,20 @@ resource "aws_security_group" "app" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-app-sg"
+    Name = "${var.vpc_name}-application-tier-security-group"
+    Purpose = "Application Tier Security"
+    Tier = "Application"
+    SecurityLevel = "High"
+    AllowsInternet = "false"
+    Component = "Backend"
+    Layer = "Business Logic"
   })
 }
 
 # Database tier security group
 resource "aws_security_group" "db" {
-  name        = "${var.vpc_name}-db-sg"
-  description = "Security group for database tier"
+  name        = "${var.vpc_name}-database-tier-security-group"
+  description = "Security group for database tier with strict access controls"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -261,14 +278,21 @@ resource "aws_security_group" "db" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-db-sg"
+    Name = "${var.vpc_name}-database-tier-security-group"
+    Purpose = "Database Security"
+    Tier = "Database"
+    SecurityLevel = "Critical"
+    AllowsInternet = "false"
+    Component = "Database"
+    Layer = "Data Persistence"
+    DataClassification = "Sensitive"
   })
 }
 
 # Bastion host security group
 resource "aws_security_group" "bastion" {
-  name        = "${var.vpc_name}-bastion-sg"
-  description = "Security group for bastion host"
+  name        = "${var.vpc_name}-bastion-host-security-group"
+  description = "Security group for bastion host with SSH access"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -288,7 +312,14 @@ resource "aws_security_group" "bastion" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-bastion-sg"
+    Name = "${var.vpc_name}-bastion-host-security-group"
+    Purpose = "SSH Jump Host Access"
+    Tier = "Management"
+    SecurityLevel = "High"
+    AllowsInternet = "true"
+    Component = "Access Control"
+    Role = "Jump Host"
+    AccessType = "SSH"
   })
 }
 
@@ -302,7 +333,13 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = concat(module.vpc.private_route_table_ids, module.vpc.public_route_table_ids)
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-s3-endpoint"
+    Name = "${var.vpc_name}-s3-vpc-endpoint"
+    Purpose = "S3 Gateway Endpoint"
+    ServiceType = "S3"
+    EndpointType = "Gateway"
+    CostOptimization = "true"
+    Component = "Storage Access"
+    NetworkOptimization = "true"
   })
 }
 
@@ -317,7 +354,13 @@ resource "aws_vpc_endpoint" "ec2" {
   private_dns_enabled = true
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-ec2-endpoint"
+    Name = "${var.vpc_name}-ec2-vpc-endpoint"
+    Purpose = "EC2 Interface Endpoint"
+    ServiceType = "EC2"
+    EndpointType = "Interface"
+    CostOptimization = "true"
+    Component = "Compute Access"
+    NetworkOptimization = "true"
   })
 }
 
@@ -325,8 +368,8 @@ resource "aws_vpc_endpoint" "ec2" {
 resource "aws_security_group" "vpc_endpoints" {
   count = var.create_ec2_endpoint ? 1 : 0
   
-  name        = "${var.vpc_name}-vpc-endpoints-sg"
-  description = "Security group for VPC endpoints"
+  name        = "${var.vpc_name}-vpc-endpoints-security-group"
+  description = "Security group for VPC endpoints with HTTPS access"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -346,6 +389,12 @@ resource "aws_security_group" "vpc_endpoints" {
   }
 
   tags = merge(var.common_tags, {
-    Name = "${var.vpc_name}-vpc-endpoints-sg"
+    Name = "${var.vpc_name}-vpc-endpoints-security-group"
+    Purpose = "VPC Endpoints Security"
+    Tier = "Infrastructure"
+    SecurityLevel = "Medium"
+    Component = "VPC Endpoints"
+    AccessType = "HTTPS"
+    NetworkOptimization = "true"
   })
 }
