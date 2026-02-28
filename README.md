@@ -15,6 +15,14 @@ This configuration creates the following AWS resources:
 - **NAT Gateways** for private subnet internet access
 - **Route Tables** with proper routing configurations
 
+### EKS Cluster
+- **EKS Cluster** with public endpoint access
+- **Managed Node Group** with single node (minimal configuration)
+- **EKS Add-ons** (CoreDNS, kube-proxy, VPC-CNI, EBS CSI driver)
+- **IRSA (IAM Roles for Service Accounts)** enabled
+- **CloudWatch Logging** for cluster monitoring
+- **Security Groups** for cluster and node access control
+
 ### Security Groups
 - **Default Security Group** - Basic VPC-wide rules
 - **Web Tier Security Group** - HTTP/HTTPS and SSH access
@@ -31,11 +39,14 @@ This configuration creates the following AWS resources:
 
 ```
 .
-├── main.tf                    # Main Terraform configuration
+├── main.tf                    # Main Terraform configuration (VPC)
+├── eks.tf                     # EKS cluster configuration
 ├── variables.tf              # Variable definitions
 ├── outputs.tf               # Output definitions
 ├── terraform.tfvars.example # Example variables file
-└── README.md                # This documentation
+├── Makefile                 # Convenience commands
+├── .gitignore              # Git ignore rules
+└── README.md               # This documentation
 ```
 
 ## Prerequisites
@@ -115,6 +126,19 @@ terraform destroy
 ### Security Configuration
 - `allowed_ssh_cidrs`: IP ranges allowed for SSH access
 
+### EKS Configuration
+- `eks_cluster_name`: Name for the EKS cluster
+- `eks_cluster_version`: Kubernetes version (e.g., "1.28")
+- `eks_public_access_cidrs`: IP ranges allowed for API access
+- `eks_admin_access_cidrs`: IP ranges for administrative access
+
+### Node Group Settings
+- `eks_node_instance_type`: EC2 instance type (default: t3.small)
+- `eks_node_min_size`: Minimum nodes (default: 1)
+- `eks_node_max_size`: Maximum nodes (default: 3)
+- `eks_node_desired_size`: Desired nodes (default: 1)
+- `eks_node_disk_size`: Node disk size in GB (default: 20)
+
 ### Optional Features
 - `enable_vpc_flow_logs`: Enable VPC Flow Logs
 - `create_s3_endpoint`: Create S3 VPC endpoint
@@ -144,12 +168,40 @@ Internet Gateway
 
 The configuration provides useful outputs including:
 
-- VPC ID and ARN
-- Subnet IDs and CIDR blocks
-- Security Group IDs
-- NAT Gateway IDs and public IPs
-- Route Table IDs
-- Internet Gateway ID
+- **VPC**: VPC ID and ARN, subnet IDs, route table IDs
+- **Security Groups**: Security Group IDs for all tiers
+- **NAT Gateway**: IDs and public IPs
+- **EKS Cluster**: Cluster endpoint, certificate, OIDC provider
+- **EKS Node Groups**: Node group ARNs and status
+- **kubectl**: Command to configure kubectl access
+
+## Post-Deployment
+
+### Accessing the EKS Cluster
+
+After successful deployment, configure kubectl to access your cluster:
+
+```bash
+# Configure kubectl (command provided in terraform output)
+aws eks update-kubeconfig --region <your-region> --name <cluster-name>
+
+# Verify cluster access
+kubectl get nodes
+kubectl get pods --all-namespaces
+```
+
+### Cluster Information
+
+```bash
+# View cluster info
+kubectl cluster-info
+
+# Check node status
+kubectl get nodes -o wide
+
+# View installed add-ons
+kubectl get daemonset -n kube-system
+```
 
 ## Best Practices
 

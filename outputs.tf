@@ -135,3 +135,98 @@ output "ec2_vpc_endpoint_id" {
   description = "ID of the EC2 VPC endpoint" 
   value       = var.create_ec2_endpoint ? aws_vpc_endpoint.ec2[0].id : null
 }
+
+# EKS Cluster Outputs
+output "eks_cluster_id" {
+  description = "ID of the EKS cluster"
+  value       = module.eks.cluster_id
+}
+
+output "eks_cluster_arn" {
+  description = "ARN of the EKS cluster"
+  value       = module.eks.cluster_arn
+}
+
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "Endpoint for EKS control plane"
+  value       = module.eks.cluster_endpoint
+}
+
+output "eks_cluster_version" {
+  description = "The Kubernetes version of the cluster"
+  value       = module.eks.cluster_version
+}
+
+output "eks_cluster_platform_version" {
+  description = "Platform version for the EKS cluster"
+  value       = module.eks.cluster_platform_version
+}
+
+output "eks_cluster_status" {
+  description = "Status of the EKS cluster"
+  value       = module.eks.cluster_status
+}
+
+output "eks_cluster_security_group_id" {
+  description = "Security group ID attached to the EKS cluster"
+  value       = module.eks.cluster_security_group_id
+}
+
+output "eks_cluster_iam_role_arn" {
+  description = "IAM role ARN of the EKS cluster"
+  value       = module.eks.cluster_iam_role_arn
+}
+
+output "eks_cluster_certificate_authority_data" {
+  description = "Base64 encoded certificate data required to communicate with the cluster"
+  value       = module.eks.cluster_certificate_authority_data
+  sensitive   = true
+}
+
+output "eks_cluster_primary_security_group_id" {
+  description = "The cluster primary security group ID created by EKS"
+  value       = module.eks.cluster_primary_security_group_id
+}
+
+# EKS Node Groups Outputs
+output "eks_node_groups" {
+  description = "Map of attribute maps for all EKS managed node groups"
+  value       = module.eks.eks_managed_node_groups
+}
+
+output "eks_node_group_arn" {
+  description = "Amazon Resource Name (ARN) of the EKS Node Group"
+  value       = module.eks.eks_managed_node_groups["minimal_node_group"].node_group_arn
+}
+
+output "eks_node_group_status" {
+  description = "Status of the EKS Node Group"
+  value       = module.eks.eks_managed_node_groups["minimal_node_group"].node_group_status
+}
+
+output "eks_node_security_group_id" {
+  description = "ID of the node shared security group"
+  value       = module.eks.node_security_group_id
+}
+
+# EKS OIDC Provider Outputs
+output "eks_oidc_provider_arn" {
+  description = "The ARN of the OIDC Provider if enabled"
+  value       = module.eks.oidc_provider_arn
+}
+
+output "eks_cluster_oidc_issuer_url" {
+  description = "The URL on the EKS cluster OIDC Issuer"
+  value       = module.eks.cluster_oidc_issuer_url
+}
+
+# kubectl configuration command
+output "kubectl_config_command" {
+  description = "Command to configure kubectl"
+  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
+}

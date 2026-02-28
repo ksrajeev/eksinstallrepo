@@ -112,3 +112,65 @@ variable "common_tags" {
     Owner       = "devops-team"
   }
 }
+
+# EKS Cluster Configuration
+variable "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  type        = string
+  default     = "my-eks-cluster"
+}
+
+variable "eks_cluster_version" {
+  description = "Kubernetes version for the EKS cluster"
+  type        = string
+  default     = "1.28"
+}
+
+variable "eks_public_access_cidrs" {
+  description = "CIDR blocks allowed for public API server access"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Change this for better security
+}
+
+variable "eks_admin_access_cidrs" {
+  description = "CIDR blocks allowed for administrative access to EKS"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Change this to your IP range for better security
+}
+
+variable "eks_cluster_log_types" {
+  description = "List of control plane logging to enable"
+  type        = list(string)
+  default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+}
+
+# EKS Node Group Configuration
+variable "eks_node_instance_type" {
+  description = "Instance type for EKS worker nodes"
+  type        = string
+  default     = "t3.small"  # Minimal size instance
+}
+
+variable "eks_node_min_size" {
+  description = "Minimum number of nodes in the node group"
+  type        = number
+  default     = 1
+}
+
+variable "eks_node_max_size" {
+  description = "Maximum number of nodes in the node group"
+  type        = number
+  default     = 3
+}
+
+variable "eks_node_desired_size" {
+  description = "Desired number of nodes in the node group"
+  type        = number
+  default     = 1  # Single node as requested
+}
+
+variable "eks_node_disk_size" {
+  description = "Disk size for EKS worker nodes (GB)"
+  type        = number
+  default     = 20  # Minimal disk size
+}

@@ -36,3 +36,21 @@ common_tags = {
   Owner       = "platform-team"
   CostCenter  = "engineering"
 }
+
+# EKS Cluster Configuration
+eks_cluster_name    = "my-production-eks-cluster"
+eks_cluster_version = "1.28"
+
+# EKS Access Control
+eks_public_access_cidrs = ["203.0.113.0/24"]  # Replace with your IP range
+eks_admin_access_cidrs  = ["203.0.113.0/24"]  # Replace with your admin IP range
+
+# EKS Node Group Configuration
+eks_node_instance_type = "t3.small"      # Minimal instance type
+eks_node_min_size      = 1               # Minimum nodes
+eks_node_max_size      = 3               # Maximum nodes  
+eks_node_desired_size  = 1               # Single node as requested
+eks_node_disk_size     = 20              # Minimal disk size (GB)
+
+# EKS Logging (optional - can disable for cost savings)
+eks_cluster_log_types = ["api", "audit", "authenticator"]  # Reduced logging for cost
