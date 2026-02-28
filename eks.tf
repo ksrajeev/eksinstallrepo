@@ -102,6 +102,37 @@ module "eks" {
       # AMI Configuration
       ami_type = "AL2023_x86_64_STANDARD"
 
+      # Pre-bootstrap user data for AL2023
+      pre_bootstrap_user_data = <<-EOD
+        #!/bin/bash
+        
+        # Configure system for EKS
+        echo "Starting pre-bootstrap configuration for EKS..."
+        
+        # Update system packages
+        dnf update -y
+        
+        # Install additional packages if needed
+        dnf install -y jq curl wget
+        
+        # Configure containerd for optimal EKS performance
+        mkdir -p /etc/containerd
+        
+        # Set up proper DNS configuration
+        echo "nameserver 169.254.169.253" >> /etc/resolv.conf
+        
+        # Configure kubelet extra arguments
+        echo "KUBELET_EXTRA_ARGS=--max-pods=110 --use-max-pods=false" >> /etc/kubernetes/kubelet/kubelet-config.json.env
+        
+        # Ensure proper permissions
+        chmod 644 /etc/kubernetes/kubelet/kubelet-config.json.env || true
+        
+        echo "Pre-bootstrap configuration completed"
+      EOD
+
+      # Bootstrap arguments for EKS cluster joining
+      bootstrap_extra_args = "--container-runtime containerd --kubelet-extra-args '--max-pods=110 --kube-reserved cpu=250m,memory=1Gi,ephemeral-storage=1Gi --system-reserved cpu=250m,memory=0.2Gi,ephemeral-storage=1Gi'"
+
       # Node Group Configuration
       capacity_type        = "ON_DEMAND"
       force_update_version = false
